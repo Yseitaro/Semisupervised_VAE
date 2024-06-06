@@ -54,11 +54,11 @@ def train_epoch(model, data_loader, optimizer, epoch, device):
     epoch_loss = 0.0
     epoch_corrects = 0.0
     loss_fn = LossFunctions()
-    n_size = 0
+    # n_size = 0
 
     # Batch loop
     for data, targets in data_loader:
-        n_size+=1
+        # n_size+=1
         data, targets = data.to(device), targets.to(device)
 
         data = data.view(len(data),-1)
@@ -71,33 +71,37 @@ def train_epoch(model, data_loader, optimizer, epoch, device):
         # print(f'data.shape : {data.size()}')
         loss_recon = loss_fn.reconstruction_loss(data,outputs['x_hat'])
         loss_gaussian = loss_fn.gaussian_loss(outputs['z'], outputs['z_mu'], outputs['z_logvar'], outputs['z_mean_prior'], outputs['z_logvar_prior'])
-        loss_cat = loss_fn.entropy(outputs['y_logits'], one_hot_targets) - np.log(0.1)
+        loss_cat = loss_fn.entropy(outputs['y_logits'], one_hot_targets) 
+        # print(f'loss_recon : {loss_recon.size()}')
+        # print(f'loss_gaussian : {loss_gaussian.size()}')
+        # print(f'loss_cat : {loss_cat.size()}') 
+        # loss_py = - np.log(0.1)
         # print(f'loss_recon : {loss_recon}')
         # print(f'loss_gaussian : {loss_gaussian}')
         # print(f'loss_cat : {loss_cat}')
-        loss = loss_recon + 20*loss_gaussian + 2400*loss_cat
+        loss = torch.mean(loss_recon + 100*loss_gaussian + loss_cat) - np.log(0.1)
         preds = torch.argmax(outputs['y_prb'], 1) # calculate predicted label
 
-        epoch_loss += loss.item()
-        epoch_corrects += torch.sum(preds == targets)/data.size(0)
+        epoch_loss += loss.item()*data.size(0)
+        epoch_corrects += torch.sum(preds == targets)
 
         optimizer.zero_grad()
         loss.backward() # backpropagation
         optimizer.step() # update parameters
 
-    epoch_loss = epoch_loss/n_size
-    epoch_acc = epoch_corrects/n_size
-    print(f'Epoch #{epoch+1}: train loss = {epoch_loss:.4f}, train acc = {epoch_acc:.4f}')
-
-    return loss
-
-
-    epoch_loss = epoch_loss / (len(data_loader.dataset))
-    epoch_acc = epoch_corrects / (len(data_loader.dataset))
-
+    epoch_loss = epoch_loss/len(data_loader.dataset)
+    epoch_acc = epoch_corrects/len(data_loader.dataset)
     print(f'Epoch #{epoch+1}: train loss = {epoch_loss:.4f}, train acc = {epoch_acc:.4f}')
 
     return epoch_loss, epoch_acc
+
+
+    # epoch_loss = epoch_loss / (len(data_loader.dataset))
+    # epoch_acc = epoch_corrects / (len(data_loader.dataset))
+
+    # print(f'Epoch #{epoch+1}: train loss = {epoch_loss:.4f}, train acc = {epoch_acc:.4f}')
+
+    # return epoch_loss, epoch_acc
 
 
 def val_epoch(model, data_loader, criterion, device):

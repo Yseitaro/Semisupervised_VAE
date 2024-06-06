@@ -22,7 +22,7 @@ class EMG_DataLoader:
         data_name = 'furui_lab'
         n_class = 6
         n_length = 45
-        n_dim = 4
+        n_dim = 2
         cutoff =1.0
         extraction_rate = 0.1
         down_sampling_rate = 1

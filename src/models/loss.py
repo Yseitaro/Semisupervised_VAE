@@ -20,7 +20,7 @@ class LossFunctions:
                                 of all the sample losses or an array with the losses per sample
       """
       loss = torch.sum((real - predictions)**2,axis=1)
-      return -torch.log(torch.mean(loss))
+      return -torch.log(loss)
 
 
     def log_normal(self, x, mu, log_var):
@@ -61,7 +61,7 @@ class LossFunctions:
       """
       loss = self.log_normal(z, z_mu, z_log_var) - self.log_normal(z, z_mu_prior, z_log_var_prior)
     #   print(f'gaussian_loss : {loss}')
-      return torch.mean(loss)
+      return loss
 
 
     def entropy(self, logits, targets):
@@ -76,9 +76,10 @@ class LossFunctions:
           output: (array/float) depending on average parameters the result will be the mean
                                 of all the sample losses or an array with the losses per sample
       """
-      loss_cross = nn.CrossEntropyLoss()
-      logits = F.log_softmax(logits, dim=-1)
-      loss = torch.mean(loss_cross(logits, targets))
+      loss = F.cross_entropy(logits, targets, reduction = 'none')
+    #   logits = F.log_softmax(logits, dim=-1)
+    #   loss = loss_cross(logits, targets)
+    #   print(f'cros_entropy : {loss}')
       return loss
     #   targets = F.one_hot(targets, num_classes=6)
     #   targets = targets.float()
