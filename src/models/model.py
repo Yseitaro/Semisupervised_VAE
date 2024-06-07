@@ -1,11 +1,13 @@
 import os
+import sys
+sys.path.append('..')
 import numpy as bo
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from loss import LossFunctions
+from src.models.loss import LossFunctions
 import numpy as np
 
 class SemisupervisedVAE(nn.Module):

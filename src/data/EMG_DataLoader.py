@@ -1,3 +1,5 @@
+import os, sys
+sys.path.append('..')
 import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
@@ -46,7 +48,7 @@ class EMG_DataLoader:
                 category = 'extracted/{:.1f}Hz'.format(cutoff)
 
 
-                data_path = f'data/{data_name}/{category}/sub{sub}/class{c+1}trial{t+1}.csv'
+                data_path = f'../data/{data_name}/{category}/sub{sub}/class{c+1}trial{t+1}.csv'
                 # data_path = f'data/{data_name}/{category}/sub{sub}/class{c+1}trial{t+1}.csv'
                
                 # fname = make_read_path(data_name, category, sub+1, c+1, trial_set[t] + 1)
