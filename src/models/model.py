@@ -5,6 +5,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+from loss import LossFunctions
+import numpy as np
 
 class SemisupervisedVAE(nn.Module):
     def __init__(self, z_dim, y_dim, input_shape, device='cpu'):
@@ -92,7 +94,7 @@ class SemisupervisedVAE(nn.Module):
         return mu + std * eps
 
     
-    def forward(self, lx, ly):
+    def forward(self, lx, ly, ux=None):
         '''
         lx: labeled data
         ly: labeled data labels
@@ -115,6 +117,31 @@ class SemisupervisedVAE(nn.Module):
         z_mean_prior, z_logvar_prior = self.pz_decoder(ly)
         # p(x|z)
         x_hat = self.px_decoder(z)
+
+        # unlabeled data
+        # q(y|ux)
+        uy_logits, uy_prb = self.qy_encoder(ux)
+
+        uy_ = torch.Tensor(ux.size(0), self.y_dim).to('cpu')
+
+        # size(batch_size,y_dim)
+        unlabel_loss = 0
+        if ux is None:
+            for i in range(self.y_dim):
+                uy = torch.zero_like(uy_)
+                uy[:,i] = 1
+                #q(z|u_x,u_y)
+                uz_mu, uz_logvar = self.qz_encoder(ux, uy)
+                uz = self.reparametrize(uz_mu, uz_logvar)
+                # p(uz|uy)
+                uz_mean_prior, uz_logvar_prior = self.pz_decoder(uy)
+                # p(x|uz)
+                ux_hat = self.px_decoder(uz)
+                unlabel_loss_recon = LossFunctions.reconstruction_loss(ux, ux_hat)
+                unlabel_loss_gaussian = LossFunctions.gaussian_loss(uz, uz_mu, uz_logvar, uz_mean_prior, uz_logvar_prior)
+                # unlabel_loss_cat = LossFunctions.entropy(uy_logits, uy)
+                unlabel_loss += unlabel_loss + (unlabel_loss_recon + unlabel_loss_gaussian - np.full_like(np.empty((unlabel_loss.size(0),1)),np.log(0.1))) * uy_prb[:,i] + uy_prb[:,i] * torch.log(uy_prb[:,i]+1e-10)
+            
         
         outinfo = {
             "z":z,
@@ -124,7 +151,8 @@ class SemisupervisedVAE(nn.Module):
             "z_logvar_prior":z_logvar_prior,
             "y_prb":y_prb,
             "y_logits":y_logits,
-            "x_hat":x_hat
+            "x_hat":x_hat,
+            'unlabel_loss':unlabel_loss
         }
 
         return outinfo

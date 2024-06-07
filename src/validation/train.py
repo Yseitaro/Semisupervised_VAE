@@ -79,7 +79,10 @@ def train_epoch(model, data_loader, optimizer, epoch, device):
         # print(f'loss_recon : {loss_recon}')
         # print(f'loss_gaussian : {loss_gaussian}')
         # print(f'loss_cat : {loss_cat}')
-        loss = torch.mean(loss_recon + 100*loss_gaussian + loss_cat) - np.log(0.1)
+        loss_supervised = torch.mean(loss_recon + 100*loss_gaussian + loss_cat) - np.log(0.1)
+        loss_unsupervised = torch.mean(outputs['unlabel_loss'])
+        loss = loss_supervised + loss_unsupervised
+
         preds = torch.argmax(outputs['y_prb'], 1) # calculate predicted label
 
         epoch_loss += loss.item()*data.size(0)
